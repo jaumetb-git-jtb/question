@@ -1,5 +1,23 @@
 [
-  { "id": 1, "nom": "Estela", "rol": "treballador", "pin": "1234" },
-  { "id": 2, "nom": "Jaume", "rol": "treballador", "pin": "2345" },
-  { "id": 3, "nom": "Paula", "rol": "treballador", "pin": "3456" }
+  {
+    "id": 1,
+    "nom": "Estela",
+    "rol": "treballador",
+    "pin": "1234",
+    "cognom":""
+  },
+  {
+    "id": 2,
+    "nom": "Jaume",
+    "rol": "treballador",
+    "pin": "2345",
+    "cognom":""
+  },
+  {
+    "id": 3,
+    "nom": "Paula",
+    "rol": "treballador",
+    "pin": "3456",
+    "cognom":""
+  }
 ]
