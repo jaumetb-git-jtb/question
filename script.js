@@ -20,7 +20,11 @@ function carregarUsuaris(callback) {
     })
     .catch((err) => console.error("❌ Error carregant usuaris:", err));
 }
-
+function reproducirSonido() {
+      const sonido = document.getElementById("miSonido");
+      
+      sonido.play();
+    }
 function obrirBD(callback) {
   const req = indexedDB.open("TropicDB", 1);
 
@@ -170,7 +174,7 @@ function fitxarManual(nom, tipus, dataStr) {
       start: `${dataStr}T${hora}`,
       color: tipus === "entrada" ? "#4caf50" : "#f44336",
     });
-
+reproducirSonido();
     alert(`✔️ Fitxatge manual enregistrat: ${nom} ${tipus} ${hora}`);
   };
 }
