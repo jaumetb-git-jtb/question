@@ -4,20 +4,20 @@
     "nom": "Estela",
     "rol": "treballador",
     "pin": "1234",
-    "cognom":""
+    "cognom":"Mena Lopez"
   },
   {
     "id": 2,
     "nom": "Jaume",
     "rol": "treballador",
     "pin": "2345",
-    "cognom":""
+    "cognom":"Tutusaus Perez"
   },
   {
     "id": 3,
     "nom": "Paula",
     "rol": "treballador",
     "pin": "3456",
-    "cognom":""
+    "cognom":"Padró Riba"
   }
 ]
