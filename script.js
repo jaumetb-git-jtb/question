@@ -107,6 +107,7 @@ function fitxar(event, nom, tipus, dataStr) {
 
   document.getElementById(`span-${tipus}-${nom}`).textContent = hora;
   if (event?.target) event.target.disabled = true;
+  reproducirSonido();
 }
 
 function mostrarFitxatgeManual(dataStr) {
