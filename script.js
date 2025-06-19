@@ -127,22 +127,54 @@ function mostrarFitxatgeManual(dataStr) {
     const div = document.createElement("div");
     div.className = "border rounded p-2 mb-2 bg-light";
 
-    div.innerHTML = `
-      <strong>${nom}</strong><br>
-      <input type="password" placeholder="PIN" class="form-control form-control-sm my-1" id="pin-${nom}">
-      <input type="time" class="form-control form-control-sm mb-1" id="hora-${nom}">
-      <div>
-        <button class="btn btn-sm btn-success me-2"
-          onclick="fitxarManual('${nom}', 'entrada', '${dataStr}')">Entrada</button>
-        <button class="btn btn-sm btn-danger"
-          onclick="fitxarManual('${nom}', 'sortida', '${dataStr}')">Sortida</button>
-      </div>
-    `;
+   div.innerHTML = `
+  <strong>${nom}</strong><br>
+  <input type="password" placeholder="PIN" class="form-control form-control-sm my-1" id="pin-${nom}">
+  <input type="time" class="form-control form-control-sm mb-2" id="hora-${nom}">
+  <div class="d-flex flex-wrap gap-2"> <!-- Contenidor flexible amb espaiat -->
+    <button class="btn btn-sm btn-success"
+      onclick="fitxarManual('${nom}', 'entrada', '${dataStr}')">Modificar Entrada</button>
+    <button class="btn btn-sm btn-danger"
+      onclick="fitxarManual('${nom}', 'sortida', '${dataStr}')">Modificar Sortida</button>
+    <button class="btn btn-sm btn-info mt-1" 
+      onclick="eliminarManual('${nom}', 'eliminar', '${dataStr}')">
+      Eliminar Registres Dia ${dataStr}
+    </button>
+  </div>
+`;
 
     cont.appendChild(div);
   });
 }
+function eliminarManual(nom,tipus,dataStr){
+  const pin = document.getElementById(`pin-${nom}`).value;
+  const treballador = usuaris.find((u) => u.nom === nom);
+  if (!treballador || treballador.pin !== pin) {
+    alert("❌ PIN incorrecte!");
+    return;
+  }
 
+ const tx = db.transaction("fitxatges", "readwrite");
+  const store = tx.objectStore("fitxatges");
+
+  // Buscar tots els registres i eliminar el que coincideixi amb nom, tipus i data
+  const getAllRequest = store.getAll();
+  getAllRequest.onsuccess = function (event) {
+    const registres = event.target.result;
+
+    registres.forEach((r) => {
+      if (r.nom === nom && tipus=== "eliminar" && r.data === dataStr) {
+        store.delete(r.id); // Elimina el registre si ja existia
+        console.log("procedeixo a eliminar");
+
+      }
+    });
+    // Eliminar tots els esdeveniments del calendari
+  calendar.removeAllEvents();
+      
+    carregarFitxatgesCalendar();
+  
+}}
 function fitxarManual(nom, tipus, dataStr) {
   const pin = document.getElementById(`pin-${nom}`).value;
   const hora = document.getElementById(`hora-${nom}`).value;
@@ -177,22 +209,28 @@ function fitxarManual(nom, tipus, dataStr) {
     store.add({ nom, tipus, data: dataStr, hora });
 
     // Actualitzar el calendari
-    calendar.addEvent({
-      title: `${nom} - ${tipus}`,
-      start: `${dataStr}T${hora}`,
-      color: tipus === "entrada" ? "#4caf50" : "#f44336",
-    });
+    //calendar.addEvent({
+   //  title: `${nom} - ${tipus}`,
+    //  start: `${dataStr}T${hora}`,
+    //  color: tipus === "entrada" ? "#4caf50" : "#f44336",
+    //});
 reproducirSonido();
     alert(`✔️ Fitxatge manual enregistrat: ${nom} ${tipus} ${hora}`);
+     calendar.removeAllEvents();
+  carregarFitxatgesCalendar();
   };
+ 
+
 }
 
 
 async function carregarFitxatgesCalendar() {
+  
   const tx = db.transaction("fitxatges", "readonly");
   const store = tx.objectStore("fitxatges");
   store.getAll().onsuccess = (e) => {
     e.target.result.forEach((f) => {
+      
       calendar.addEvent({
         title: `${f.nom} - ${f.tipus}`,
         start: `${f.data}T${f.hora}`,
@@ -214,18 +252,18 @@ function actualitzarHora() {
     "Dissabte",
   ];
   const mesos = [
-    "de gener",
-    "de febrer",
-    "de març",
-    "d’abril",
-    "de maig",
-    "de juny",
-    "de juliol",
-    "d’agost",
-    "de setembre",
-    "d’octubre",
-    "de novembre",
-    "de desembre",
+    "de Gener",
+    "de Febrer",
+    "de Març",
+    "d’Abril",
+    "de Maig",
+    "de Juny",
+    "de Juliol",
+    "d’Agost",
+    "de Setembre",
+    "d’Octubre",
+    "de Novembre",
+    "de Desembre",
   ];
 
   const text = `Avui és ${dies[ara.getDay()]} ${ara.getDate()} ${
@@ -234,6 +272,7 @@ function actualitzarHora() {
     ara.getMinutes()
   ).padStart(2, 0)}:${String(ara.getSeconds()).padStart(2,0)}
   `;
+  document.getElementById("rellotge").style="font-size:20px;font-weight:bold";
   document.getElementById("rellotge").textContent = text;
   // Comprovar l'hora cada minut
 setInterval(() => {
@@ -264,8 +303,8 @@ document.addEventListener("DOMContentLoaded", () => {
       right: "dayGridMonth,timeGridWeek,timeGridDay",
     },
     views: {
-      timeGridWeek: { slotMinTime: "06:00:00", slotMaxTime: "22:00:00" },
-      timeGridDay: { slotMinTime: "06:00:00", slotMaxTime: "22:00:00" },
+      timeGridWeek: { slotMinTime: "06:00:00", slotMaxTime: "24:00:00" },
+      timeGridDay: { slotMinTime: "06:00:00", slotMaxTime: "24:00:00" },
     },
     dateClick: function (info) {
       const avui = new Date().toISOString().split("T")[0];
@@ -295,6 +334,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   carregarUsuaris(() => {
     obrirBD(() => {
+     
       carregarFitxatgesCalendar();
       calendar.render();
 
