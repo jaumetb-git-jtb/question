@@ -36,6 +36,7 @@
    display: block !important;
     border-left: 4px solid #0d6efd;
 }
+#taulaFitxatges{ border-left: 4px solid #0d6efd;}
 #fitxatgeManual h6 {
   font-weight: bold;
   margin-bottom: 1rem;
@@ -46,11 +47,29 @@
 }
 #panellLateral {
   padding-bottom: 4rem;
+    border-left: 4px solid #0d6efd;
 }
-#adminPanel{display:none;}
+#adminPanel{
+  border-radius:5px;
+ 
+}
 img{width:200px;height:50px;}
 #visorPDF{
   width: 100%;
   height: 100vh; /* Ocupa tota la pantalla */
   border: none;
+}
+#ver-botones{display:none;}
+#entrar-administracio,#activar-sonido{display:none;}
+#activar-sonido,#activar-sonido2{color:rgb(93, 60, 215);
+gap:5px;}
+#activar-conexion {
+  font-size: 3rem; /* fa gran tant el text com la icona */
+  padding: 1rem 1.5rem;
+  border-radius: 10px;
+  color:chartreuse;
+}
+
+#activar-conexion i {
+  font-size: 2.5rem; /* opcional: pots fer només la icona més gran */
 }
