@@ -2,11 +2,19 @@ let calendar;
 let db;
 let usuaris = [];
 let musica=0;
+document.getElementById("adminPanel").style.display = "none";
 function reproducirSonido() {
+   document.getElementById('miSonido').src="trabar-carro-alarma-auto-.mp3";
       const audio = document.getElementById("miSonido");
       
       audio.play();
     }
+ function reproducirSonidoValor(valor) {
+  document.getElementById('miSonido').src=valor;
+      const audio = document.getElementById('miSonido');
+      
+      audio.play();
+    }   
 function playSound() {
     let audio = new Audio('karol-g.mp3'); // Substitueix amb la teva ruta del fitxer d'àudio
   
@@ -292,6 +300,7 @@ setInterval(() => {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+
   const calendarEl = document.getElementById("calendar");
   calendar = new FullCalendar.Calendar(calendarEl, {
     initialView: "dayGridMonth",
@@ -351,12 +360,18 @@ document.addEventListener("DOMContentLoaded", () => {
       setInterval(actualitzarHora, 1000);
     });
   });
+   const panel = document.getElementById("container-fluid");
+    
+      panel.style.display = "none" ;
 });
 document
   .getElementById("entrar-administracio")
   .addEventListener("click", () => {
-    const panel = document.getElementById("adminPanel");
-    panel.style.display = panel.style.display === "none" ? "block" : "none";
+    const boton=document.getElementById('entrar-administracio');
+   const panel = document.getElementById("adminPanel");
+      const isHidden = window.getComputedStyle(panel).display === "none";
+      panel.style.display = isHidden ? "block" : "none";
+    boton.textContent = isHidden ? "Tancar Administració" : "Veure Administració";
   });
 function mostrarInforme(mes) {
   const avui = new Date();
@@ -771,4 +786,16 @@ function generarInforme(fitxatges) {
     frame.contentWindow.print();
   };
 }
-
+document.getElementById('activar-conexion').addEventListener("click", () => {
+  
+   const panel = document.getElementById("container-fluid");
+    
+      panel.style.display = "block" ;
+  calendar.removeAllEvents();
+  carregarFitxatgesCalendar();
+  document.getElementById('activar-conexion').style.display="none";
+  document.getElementById('ver-botones').style.display="block";
+  document.getElementById('entrar-administracio').style.display="block";
+  document.getElementById('activar-sonido').style.display="block";
+  reproducirSonidoValor('whatsapp-apple.mp3');
+  });
