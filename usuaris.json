@@ -5,7 +5,7 @@
     "rol": "treballador",
     "pin": "1234",
     "cognom":"Mena Lopez",
-    "foto": "Estela.png"
+    "foto": ""
   },
   {
     "id": 2,
@@ -21,6 +21,6 @@
     "rol": "treballador",
     "pin": "3456",
     "cognom":"Padró Riba",
-    "foto": "Paula.png"
+    "foto": ""
   }
 ]
