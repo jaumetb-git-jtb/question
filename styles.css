@@ -60,7 +60,7 @@ img{width:200px;height:50px;}
   border: none;
 }
 #ver-botones{display:none;}
-#entrar-administracio,#activar-sonido{display:none;}
+#entrar-administracio,#activar-sonido,#feedback,#feedback-info{display:none;}
 #activar-sonido,#activar-sonido2{color:rgb(93, 60, 215);
 gap:5px;}
 #activar-conexion {
@@ -72,4 +72,44 @@ gap:5px;}
 
 #activar-conexion i {
   font-size: 2.5rem; /* opcional: pots fer només la icona més gran */
+}
+/* Cos del modal amb fons suau */
+.modal-content {
+  background: linear-gradient(to bottom right, #f3f9ff, #e0f0ff);
+  border: 2px solid #bcdfff;
+  border-radius: 10px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* Títol amb color destacat */
+.modal-title {
+  color: #0d6efd;
+  font-weight: bold;
+}
+
+/* Camps readonly lleugerament enfosquits */
+.modal-body input[readonly] {
+  background-color: #f0f4f8;
+  color: #333;
+}
+
+/* Botons personalitzats */
+.modal-footer .btn-success {
+  background-color: #198754;
+  border-color: #157347;
+}
+
+.modal-footer .btn-danger {
+  background-color: #dc3545;
+  border-color: #bb2d3b;
+}
+
+.modal-footer .btn-secondary {
+  background-color: #6c757d;
+  border-color: #565e64;
+}
+
+/* Feedback amb transició suau */
+#feedback,#feedback-info {
+  transition: opacity 0.3s ease-in-out;
 }
