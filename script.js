@@ -3,10 +3,9 @@ let db;
 let usuaris = [];
 let musica = 0;
 let numeroDeFitxatges = 0;
-let fitxatgesDia=[];
+let fitxatgesDia = [];
 document.getElementById("adminPanel").style.display = "none";
 function reproducirSonido() {
-
   document.getElementById("miSonido").src = "trabar-carro-alarma-auto-.mp3";
   const audio = document.getElementById("miSonido");
 
@@ -32,6 +31,35 @@ const empresa = {
   logo: logoBase64, // opcional base64 si quieres insertar imagen
   ciutat: "Igualada (08700)",
 };
+function redondearCuartoDeHora(tipo, horaStr) {
+  // Convertir la hora en string a minutos totales
+  const [horas, minutos] = horaStr.split(":").map(Number);
+  let minutosTotales = horas * 60 + minutos;
+
+  // Lógica de redondeo
+  const residuo = minutosTotales % 15;
+  let minutosRedondeados;
+
+  if (tipo === "entrada") {
+    // Redondear hacia arriba al próximo cuarto
+    minutosRedondeados =
+      residuo === 0 ? minutosTotales : minutosTotales + (15 - residuo);
+  } else if (tipo === "sortida") {
+    // Redondear hacia abajo al cuarto anterior
+    minutosRedondeados = minutosTotales - residuo;
+  } else {
+    throw new Error('Tipo no válido. Usar "entrada" o "sortida"');
+  }
+
+  // Convertir de vuelta a formato HH:MM
+  const horasRedondeadas = Math.floor(minutosRedondeados / 60) % 24;
+  const minutosFinales = minutosRedondeados % 60;
+
+  return `${String(horasRedondeadas).padStart(2, "0")}:${String(
+    minutosFinales
+  ).padStart(2, "0")}`;
+}
+
 function carregarUsuaris(callback) {
   fetch("usuaris.json")
     .then((res) => res.json())
@@ -82,7 +110,7 @@ function actualitzarPanell(dataStr) {
 
   const tx = db.transaction("fitxatges", "readonly");
   const store = tx.objectStore("fitxatges");
-fitxatgesDia=[];
+  fitxatgesDia = [];
   store.getAll().onsuccess = (e) => {
     const fitxatges = e.target.result.filter((f) => f.data === dataStr);
 
@@ -100,13 +128,23 @@ fitxatgesDia=[];
       const sortidaHora = sortida ? sortida.hora : "--:--";
       const entradaDisabled = entradaHora !== "--:--" ? "disabled" : "";
       const sortidaDisabled = sortidaHora !== "--:--" ? "disabled" : "";
-fitxatgesDia.push({nom,dataStr,entrada:entradaDisabled?true:false,sortida:sortidaDisabled?true:false});
+      fitxatgesDia.push({
+        nom,
+        dataStr,
+        entrada: entradaDisabled ? true : false,
+        sortida: sortidaDisabled ? true : false,
+      });
 
       const div = document.createElement("div");
       div.className =
         "d-flex align-items-center justify-content-between border rounded bg-white p-2 mb-2 flex-wrap";
-//<div class="me-auto"><img src="${treballador.foto}" alt="${nom}" class="img-fluid rounded-circle" style="width: 40px; height: 40px;"></div>
-      div.innerHTML = `<div class="img-fluid rounded-circle" style="width: 40px; height: 40px;background-color:blue;"></div>
+      //<div class="me-auto"><img src="${treballador.foto}" alt="${nom}" class="img-fluid rounded-circle" style="width: 40px; height: 40px;"></div>
+      if (treballador.foto === "") {
+        div.innerHTML = ``;
+      } else {
+        div.innerHTML = `<div class="me-auto"><img src="${treballador.foto}" alt="${nom}" class="img-fluid rounded-circle" style="width: 40px; height: 40px;"></div>`;
+      }
+      div.innerHTML += `
         <div class="me-auto"><strong>${nom}</strong></div>
         <div class="d-flex align-items-center flex-wrap">
           <button class="btn btn-sm btn-success me-1"
@@ -120,18 +158,21 @@ fitxatgesDia.push({nom,dataStr,entrada:entradaDisabled?true:false,sortida:sortid
 
       cont.appendChild(div);
     });
-    console.log("Fitxatges del dia:",fitxatgesDia);
+    console.log("Fitxatges del dia:", fitxatgesDia);
   };
 }
 
 function fitxar(event, nom, tipus, dataStr) {
-  const hora = new Date().toTimeString().slice(0, 5);
+  const hora = redondearCuartoDeHora(
+    tipus,
+    new Date().toTimeString().slice(0, 5)
+  );
 
   const tx = db.transaction("fitxatges", "readwrite");
   const store = tx.objectStore("fitxatges");
   store.add({ nom, tipus, data: dataStr, hora });
 
-console.log("Fitxatges del dia:", fitxatgesDia);
+  console.log("Fitxatges del dia:", fitxatgesDia);
   calendar.addEvent({
     title: `${nom} - ${tipus}`,
     start: `${dataStr}T${hora}`,
@@ -213,7 +254,10 @@ function eliminarManual(nom, tipus, dataStr) {
 }
 function fitxarManual(nom, tipus, dataStr) {
   const pin = document.getElementById(`pin-${nom}`).value;
-  const hora = document.getElementById(`hora-${nom}`).value;
+  const hora = redondearCuartoDeHora(
+    tipus,
+    document.getElementById(`hora-${nom}`).value
+  );
 
   // Comprovar si el treballador existeix i validar el PIN
   const treballador = usuaris.find((u) => u.nom === nom);
@@ -317,49 +361,63 @@ function actualitzarHora() {
   let minutes = now.getMinutes();
   let seconds = now.getSeconds();
   // Configura l'hora en què vols reproduir el so (exemple: 15:30)
-  if(hours===12 && minutes===0){
-numeroDeFitxatges=0;
-mostrar_feedback_info("🔔 Hora de Fitxar Sortida ! 🔔 Alarma Conectada","info",3000);
-numeroDeFitxatges=0;
-  } 
+  if (hours === 12 && minutes === 0) {
+    numeroDeFitxatges = 0;
+    mostrar_feedback_info(
+      "🔔 Hora de Fitxar Sortida ! 🔔 Alarma Conectada",
+      "info",
+      3000
+    );
+    numeroDeFitxatges = 0;
+  }
   if (
     hours === 7 &&
-    (minutes === 55 || minutes === 57 || minutes===59) &&
+    (minutes === 55 || minutes === 57 || minutes === 59) &&
     (seconds === 0 || seconds === 15 || seconds === 30 || seconds === 45)
   ) {
     musica = 0;
-    
+
     if (musica === 0) {
       if (numeroDeFitxatges < 2) {
         playSound();
-        mostrar_feedback_info("🔔 Hora de Fitxar Entrada ! 🔔 Alarma Conectada", "info",6000);
+        mostrar_feedback_info(
+          "🔔 Hora de Fitxar Entrada ! 🔔 Alarma Conectada",
+          "info",
+          6000
+        );
         console.log("reproduint so");
         musica = seconds;
-      }else{
+      } else {
         mostrar_feedback_info(
           "🔔 Ja heu fitxat avui, no cal que ho feu de nou! Alarma Desconectada",
-          "valid",6000
+          "valid",
+          6000
         );
       }
     }
   }
   if (
     hours === 12 &&
-    (minutes === 1 || minutes === 3 || minutes===5) &&
+    (minutes === 1 || minutes === 3 || minutes === 5) &&
     (seconds === 0 || seconds === 15 || seconds === 30 || seconds === 45)
   ) {
     musica = 0;
-    
+
     if (musica === 0) {
       if (numeroDeFitxatges < 2) {
         playSound();
-        mostrar_feedback_info("🔔 Hora de Fitxar Sortida ! 🔔 Alarma Conectada", "info",6000);
+        mostrar_feedback_info(
+          "🔔 Hora de Fitxar Sortida ! 🔔 Alarma Conectada",
+          "info",
+          6000
+        );
         console.log("reproduint so");
         musica = seconds;
-      }else{
+      } else {
         mostrar_feedback_info(
           "🔔 Ja heu fitxat avui, no cal que ho feu de nou! Alarma Desconectada",
-          "valid",6000
+          "valid",
+          6000
         );
       }
     }
@@ -449,7 +507,10 @@ document.querySelector(".btn-success").addEventListener("click", () => {
   const nom = document.getElementById("modalUsuari").value;
   const tipus = document.getElementById("modalAccio").value;
   const dataStr = convertirDataAISO(document.getElementById("modalData").value);
-  const novaHora = document.getElementById("modalHoraCompleta").value; // format 'HH:mm'
+  const novaHora = redondearCuartoDeHora(
+    tipus,
+    document.getElementById("modalHoraCompleta").value
+  ); // format 'HH:mm'
 
   const pass = document.getElementById("modalPassword").value;
 
