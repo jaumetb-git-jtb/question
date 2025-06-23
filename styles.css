@@ -1,5 +1,5 @@
 #calendar {
-  background-color: white;
+  background-color: rgb(194, 190, 190);
   padding: 1rem;
   border-radius: 8px;
   box-shadow: 0 2px 6px rgba(0,0,0,0.1);
@@ -28,7 +28,7 @@
 #fitxatgeManual {
   max-height: 50vh;
   overflow-y: auto;
-  background-color: #f0f4f8;
+  background-color: #e0e5eb;
   border: 1px solid #ddd;
   padding: 1rem;
   border-radius: 8px;
@@ -112,4 +112,41 @@ gap:5px;}
 /* Feedback amb transició suau */
 #feedback,#feedback-info {
   transition: opacity 0.3s ease-in-out;
+}
+/* Estilo para eventos */
+.fc-event {
+  border-radius: 5px; /* Bordes redondeados */
+}
+
+/* Clase personalizada */
+.evento-urgente {
+  background-color: #ff0000 !important;
+  border-color: #cc0000 !important;
+}
+
+/* Cambiar color de fondo del calendario */
+.fc-daygrid-day {
+  background-color: #edeff1;
+}
+
+/* Color del encabezado */
+.fc-col-header-cell {
+  background-color: #e6ebf0 !important;
+  color: rgb(241, 162, 162) !important;
+}
+/* Botones de navegación */
+.fc-button {
+  background-color: #4CAF50 !important;
+  border: none !important;
+}
+
+/* Día actual */
+.fc-day-today {
+  background-color: #6abd6e !important;
+}
+
+/* Cambiar color de los días de la semana */
+.fc-col-header-cell {
+  background-color: #7d8ea1;
+  color: white;
 }
