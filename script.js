@@ -72,12 +72,18 @@ function carregarUsuaris(callback) {
 }
 
 function obrirBD(callback) {
-  const req = indexedDB.open("TropicDB", 1);
+  const req = indexedDB.open("TropicDB", 2);
 
   req.onupgradeneeded = (e) => {
     db = e.target.result;
     if (!db.objectStoreNames.contains("fitxatges")) {
       db.createObjectStore("fitxatges", { keyPath: "id", autoIncrement: true });
+    }
+    if (!db.objectStoreNames.contains("fitxatges_edits")) {
+      db.createObjectStore("fitxatges_edits", {
+        keyPath: "id",
+        autoIncrement: true,
+      });
     }
   };
 
@@ -101,6 +107,9 @@ function convertirDataAISO(dataInput) {
   return `${any}-${mes.padStart(2, "0")}-${dia.padStart(2, "0")}`;
 }
 function actualitzarPanell(dataStr) {
+
+  const dataActual = new Date().toISOString().slice(0, 10);
+   if (dataStr === dataActual) { fitxatgesDia = [];}
   const dataIso = convertirDataAISOguio(dataStr);
   document.getElementById(
     "panellDeFitxatge"
@@ -110,11 +119,12 @@ function actualitzarPanell(dataStr) {
 
   const tx = db.transaction("fitxatges", "readonly");
   const store = tx.objectStore("fitxatges");
-  fitxatgesDia = [];
+  
   store.getAll().onsuccess = (e) => {
     const fitxatges = e.target.result.filter((f) => f.data === dataStr);
 
     usuaris.forEach((treballador) => {
+   
       const nom = treballador.nom;
 
       const entrada = fitxatges.find(
@@ -128,16 +138,27 @@ function actualitzarPanell(dataStr) {
       const sortidaHora = sortida ? sortida.hora : "--:--";
       const entradaDisabled = entradaHora !== "--:--" ? "disabled" : "";
       const sortidaDisabled = sortidaHora !== "--:--" ? "disabled" : "";
-      fitxatgesDia.push({
-        nom,
-        dataStr,
-        entrada: entradaDisabled ? true : false,
-        sortida: sortidaDisabled ? true : false,
-      });
+      //console.log("dataStr-=", convertirDataAISOguio(dataStr));
+     // console.log("new Date=", new Date());
+      //comparar dataStr amb la data actual
+      
+      
+      if (dataStr === dataActual) {
+      
+        fitxatgesDia.push({
+         
+          nom,
+          dataStr,
+          entrada: entradaDisabled ? true : false,
+          sortida: sortidaDisabled ? true : false,
+        });
+        
+      }
 
       const div = document.createElement("div");
       div.className =
         "d-flex align-items-center justify-content-between border rounded bg-white p-2 mb-2 flex-wrap";
+
       //<div class="me-auto"><img src="${treballador.foto}" alt="${nom}" class="img-fluid rounded-circle" style="width: 40px; height: 40px;"></div>
       if (treballador.foto === "") {
         div.innerHTML = ``;
@@ -155,10 +176,12 @@ function actualitzarPanell(dataStr) {
           <span id="span-sortida-${nom}">${sortidaHora}</span>
         </div>
       `;
-
+      
+//Aqui poder mostrar la modificacio aplicada ??
       cont.appendChild(div);
     });
     console.log("Fitxatges del dia:", fitxatgesDia);
+  
   };
 }
 
@@ -170,15 +193,33 @@ function fitxar(event, nom, tipus, dataStr) {
 
   const tx = db.transaction("fitxatges", "readwrite");
   const store = tx.objectStore("fitxatges");
-  store.add({ nom, tipus, data: dataStr, hora });
+  const diaActual=new Date().toISOString().slice(0, 10);
+  if (dataStr !== diaActual) {
+    mostrar_feedback_info(
+      `❌ No pots fitxar per a la data ${dataStr}, només es permeten fitxatges per al dia actual.Demana al teu administrador que ho canviï`,
+      "error"
+    );
 
-  console.log("Fitxatges del dia:", fitxatgesDia);
-  calendar.addEvent({
-    title: `${nom} - ${tipus}`,
-    start: `${dataStr}T${hora}`,
-    color: tipus === "entrada" ? "#4caf50" : "#f44336",
-  });
+    return;
+  }
+  
+  const req = store.add({ nom, tipus, data: dataStr, hora });
 
+  req.onsuccess = (event) => {
+    const idGenerat = event.target.result; // L'ID autogenerat
+
+    // Ara ja pots afegir-lo al calendari
+    calendar.addEvent({
+      id: `fitxatge-${idGenerat}`,
+      title: `${nom} - ${tipus}`,
+      start: `${dataStr}T${hora}`,
+      color: tipus === "entrada" ? "#4caf50" : "#f44336"
+    });
+  };
+
+  req.onerror = (e) => {
+    console.error("❌ Error afegint fitxatge:", e.target.error);
+  };
   document.getElementById(`span-${tipus}-${nom}`).textContent = hora;
   if (event?.target) event.target.disabled = true;
   mostrar_feedback_info(
@@ -210,7 +251,7 @@ function mostrarFitxatgeManual(dataStr) {
       onclick="fitxarManual('${nom}', 'entrada', '${dataStr}')">Modificar Entrada</button>
     <button class="btn btn-sm btn-danger"
       onclick="fitxarManual('${nom}', 'sortida', '${dataStr}')">Modificar Sortida</button>
-    <button class="btn btn-sm btn-info mt-1" 
+    <button class="btn btn-sm btn-info mt-1" disabled 
       onclick="eliminarManual('${nom}', 'eliminar', '${dataStr}')">
       Eliminar Registres Dia ${dataIso}
     </button>
@@ -238,6 +279,10 @@ function eliminarManual(nom, tipus, dataStr) {
 
     registres.forEach((r) => {
       if (r.nom === nom && tipus === "eliminar" && r.data === dataStr) {
+        const eventEntrada = calendar.getEventById(`${nom}-entrada-${dataStr}`);
+        if (eventEntrada) eventEntrada.remove(); // Elimina l'esdeveniment del calendari
+        const eventSortida = calendar.getEventById(`${nom}-sortida-${dataStr}`);
+        if (eventSortida) eventSortida.remove(); // Elimina l'esdeven
         store.delete(r.id); // Elimina el registre si ja existia
         mostrar_feedback_info(
           "🚫 Procedeixo a eliminar registres de " + nom + " dia " + dataStr,
@@ -246,9 +291,7 @@ function eliminarManual(nom, tipus, dataStr) {
       }
     });
     // Eliminar tots els esdeveniments del calendari
-    calendar.removeAllEvents();
-
-    carregarFitxatgesCalendar();
+    
     actualitzarPanell(dataStr);
   };
 }
@@ -260,7 +303,7 @@ function fitxarManual(nom, tipus, dataStr) {
   );
 
   // Comprovar si el treballador existeix i validar el PIN
-  const treballador = usuaris.find((u) => u.nom === nom);
+  const treballador = usuaris.find((u) => u.nom === "Paula");
   if (!treballador || treballador.pin !== pin) {
     mostrar_feedback_info("❌ PIN incorrecte!", "error");
     return;
@@ -282,25 +325,34 @@ function fitxarManual(nom, tipus, dataStr) {
     registres.forEach((r) => {
       if (r.nom === nom && r.tipus === tipus && r.data === dataStr) {
         store.delete(r.id); // Elimina el registre si ja existia
+        const eventEliminar = calendar.getEventById(`fitxatge-${r.id}`);
+
+        if (eventEliminar) eventEliminar.remove();
       }
     });
+const emoji = "🛠️";
+    const req = store.add({ nom, tipus, data: dataStr, hora });
 
-    // Afegir el nou registre després de la neteja
-    store.add({ nom, tipus, data: dataStr, hora });
+  req.onsuccess = (event) => {
+    const idGenerat = event.target.result; // L'ID autogenerat
 
-    // Actualitzar el calendari
-    //calendar.addEvent({
-    //  title: `${nom} - ${tipus}`,
-    //  start: `${dataStr}T${hora}`,
-    //  color: tipus === "entrada" ? "#4caf50" : "#f44336",
-    //});
+    // Ara ja pots afegir-lo al calendari
+    calendar.addEvent({
+      id: `fitxatge-${idGenerat}`,
+      title: `${emoji}${nom} - ${tipus}`,
+      start: `${dataStr}T${hora}`,
+      color: tipus === "entrada" ? "#4caf50" : "#f44336"
+    });
+  };
 
+  req.onerror = (e) => {
+    console.error("❌ Error afegint fitxatge:", e.target.error);
+  };
     mostrar_feedback_info(
       `✔️ Fitxatge manual enregistrat: ${nom} ${tipus} ${hora}`,
       "valid"
     );
-    calendar.removeAllEvents();
-    carregarFitxatgesCalendar();
+
     reproducirSonido();
     actualitzarPanell(dataStr);
   };
@@ -312,6 +364,7 @@ async function carregarFitxatgesCalendar() {
   store.getAll().onsuccess = (e) => {
     e.target.result.forEach((f) => {
       calendar.addEvent({
+        id: `fitxatge-${f.id}`,
         title: `${f.nom} - ${f.tipus}`,
         start: `${f.data}T${f.hora}`,
         color: f.tipus === "entrada" ? "#4caf50" : "#f44336",
@@ -320,7 +373,7 @@ async function carregarFitxatgesCalendar() {
   };
 }
 
-function actualitzarHora() {
+async function actualitzarHora() {
   const ara = new Date();
   const dies = [
     "Diumenge",
@@ -360,9 +413,11 @@ function actualitzarHora() {
   let hours = now.getHours();
   let minutes = now.getMinutes();
   let seconds = now.getSeconds();
+  //recorrer el array fitxatgesDia i comprobar si hi ha algun fitxatge de entrada o sortida
+
   // Configura l'hora en què vols reproduir el so (exemple: 15:30)
   if (hours === 12 && minutes === 0) {
-    numeroDeFitxatges = 0;
+    
     mostrar_feedback_info(
       "🔔 Hora de Fitxar Sortida ! 🔔 Alarma Conectada",
       "info",
@@ -370,9 +425,13 @@ function actualitzarHora() {
     );
     numeroDeFitxatges = 0;
   }
+  //recorrer el array fitxatgesDia i comprobar si entrada=true
+  const entradaFitxatges = fitxatgesDia.filter((f) => f.entrada === false);
+  const sortidaFitxatges = fitxatgesDia.filter((f) => f.sortida === false);
   if (
+    entradaFitxatges.length > 1 &&
     hours === 7 &&
-    (minutes === 55 || minutes === 57 || minutes === 59) &&
+    (minutes === 50 || minutes === 55 || minutes === 58) &&
     (seconds === 0 || seconds === 15 || seconds === 30 || seconds === 45)
   ) {
     musica = 0;
@@ -389,14 +448,15 @@ function actualitzarHora() {
         musica = seconds;
       } else {
         mostrar_feedback_info(
-          "🔔 Ja heu fitxat avui, no cal que ho feu de nou! Alarma Desconectada",
-          "valid",
+          "🔔 Ja heu fitxat entrada, no cal que ho feu de nou! Alarma Desconectada",
+          "ok",
           6000
         );
       }
     }
   }
   if (
+    sortidaFitxatges.length > 1 &&
     hours === 12 &&
     (minutes === 1 || minutes === 3 || minutes === 5) &&
     (seconds === 0 || seconds === 15 || seconds === 30 || seconds === 45)
@@ -416,7 +476,7 @@ function actualitzarHora() {
       } else {
         mostrar_feedback_info(
           "🔔 Ja heu fitxat avui, no cal que ho feu de nou! Alarma Desconectada",
-          "valid",
+          "ok",
           6000
         );
       }
@@ -436,8 +496,11 @@ function mostrar_feedback_info(text, tipus = "info", durada = 2000) {
       feedback.classList.add("text-danger");
       reproducirSonidoValor("fallo-1.mp3");
       break;
-    case "valid":
+
     case "ok":
+      feedback.classList.add("text-success");
+      break;
+    case "valid":
     case "success":
       feedback.classList.add("text-success");
       reproducirSonidoValor("trabar-carro-alarma-auto-.mp3");
@@ -503,10 +566,41 @@ function mostrarFeedbackIAmagarModal(missatge) {
     }, 400);
   }, 1200);
 }
+function afegirModificacioFitxatge(fitxatgeOriginal, novaHora, nouTipus, motiu, administradorNom) {
+  const tx = db.transaction("fitxatges_edits", "readwrite");
+  const store = tx.objectStore("fitxatges_edits");
+
+  const modificacio = {
+    fitxatge_id: fitxatgeOriginal.id,
+    nom:fitxatgeOriginal.nom,
+    nova_data: fitxatgeOriginal.data,
+    nova_hora: novaHora,
+    nou_tipus: nouTipus,
+    motiu,
+    modificat_per: administradorNom,
+    data_modificacio: new Date().toISOString()
+  };
+
+  const req = store.add(modificacio);
+
+  req.onsuccess = () => {
+    console.log("🛠️ Modificació registrada a fitxatges_edits:",modificacio);
+    // Aquí pots actualitzar el calendari si vols
+  };
+
+  req.onerror = (e) => {
+    console.error("❌ Error registrant modificació:", e.target.error);
+  };
+}
+
 document.querySelector(".btn-success").addEventListener("click", () => {
-  const nom = document.getElementById("modalUsuari").value;
+  const idGen=document.getElementById("modalId").value;
+const numero_id = parseInt(idGen.split("-")[1]);
+  let nom = document.getElementById("modalUsuari").value;
+nom = nom.replace(/[^a-zA-ZÀ-ÿ]/g, "");
   const tipus = document.getElementById("modalAccio").value;
   const dataStr = convertirDataAISO(document.getElementById("modalData").value);
+  const motiu=document.getElementById("modalMotiu").value;
   const novaHora = redondearCuartoDeHora(
     tipus,
     document.getElementById("modalHoraCompleta").value
@@ -514,7 +608,7 @@ document.querySelector(".btn-success").addEventListener("click", () => {
 
   const pass = document.getElementById("modalPassword").value;
 
-  const usuariTrobat = usuaris.find((u) => u.nom === nom && u.pin === pass);
+  const usuariTrobat = usuaris.find((u) => u.nom === "Paula" && u.pin === pass);
   if (!usuariTrobat) {
     const feedback = document.getElementById("feedback");
     feedback.textContent = "❌ Contrasenya incorrecta";
@@ -544,31 +638,59 @@ document.querySelector(".btn-success").addEventListener("click", () => {
   obrirBD(() => {
     const tx = db.transaction("fitxatges", "readwrite");
     const store = tx.objectStore("fitxatges");
-
-    const consulta = store.getAll();
+console.log("idGen: "+idGen+" numero_id: "+numero_id);
+   const consulta = store.getAll();
+    
     consulta.onsuccess = () => {
       const registre = consulta.result.find(
-        (r) => r.nom === nom && r.tipus === tipus && r.data === dataStr
+        (r) => r.id === numero_id
       );
       if (!registre) {
         mostrar_feedback_info("❌ Registre no trobat", "error");
         return;
       }
-
-      store.delete(registre.id);
-      store.add({ nom, tipus, data: dataStr, hora: novaHora });
+      // Aplica la modificació i registra-la
+      const admin="Administrador";
+      console.log(registre);
+  afegirModificacioFitxatge(registre, novaHora, tipus, motiu,admin );
+const eventActualitzar=calendar.getEventById(`fitxatge-${numero_id}`);
+const emoji = "🛠️";
+if(eventActualitzar){
+   eventActualitzar.setStart(`${dataStr}T${novaHora}`);
+  eventActualitzar.setProp("title", `${emoji}${registre.nom} - ${registre.tipus}`);
+}
       mostrar_feedback_info(
         `✅ Hora modificada: ${nom} ${tipus} ${novaHora}`,
         "valid"
       );
       mostrarFeedbackIAmagarModal("✅ Hora modificada correctament");
-      calendar.removeAllEvents();
-      carregarFitxatgesCalendar();
+     mostrarConsola(),
       actualitzarPanell(dataStr);
     };
   });
 });
+async function mostrarConsola(){
+  const tx = db.transaction("fitxatges_edits", "readonly");
+const store = tx.objectStore("fitxatges_edits");
 
+const request = store.getAll();
+
+request.onsuccess = (event) => {
+  const edits = event.target.result;
+  console.log("📋 Modificacions registrades:");
+  edits.forEach(edit => {
+    console.log(`🛠️ Fitxatge ID: ${edit.fitxatge_id}`);
+    console.log(`Nom: ${edit.nom}`);
+    console.log(`Nova data: ${edit.nova_data}`);
+    console.log(`Nova hora: ${edit.nova_hora}`);
+    console.log(`Nou tipus: ${edit.nou_tipus}`);
+    console.log(`Motiu: ${edit.motiu}`);
+    console.log(`Modificat per: ${edit.modificat_per}`);
+    console.log(`Data modificació: ${edit.data_modificacio}`);
+    console.log("---------------------------");
+  });
+};
+}
 document.querySelector(".btn-danger").addEventListener("click", () => {
   const nom = document.getElementById("modalUsuari").value;
   const tipus = document.getElementById("modalAccio").value;
@@ -637,8 +759,8 @@ document.addEventListener("DOMContentLoaded", () => {
       right: "dayGridMonth,timeGridWeek,timeGridDay",
     },
     views: {
-      timeGridWeek: { slotMinTime: "06:00:00", slotMaxTime: "24:00:00" },
-      timeGridDay: { slotMinTime: "06:00:00", slotMaxTime: "24:00:00" },
+      timeGridWeek: { slotMinTime: "02:00:00", slotMaxTime: "24:00:00" },
+      timeGridDay: { slotMinTime: "02:00:00", slotMaxTime: "24:00:00" },
     },
     eventClick: function (info) {
       info.jsEvent.preventDefault();
@@ -653,7 +775,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const titleParts = info.event.title.split(" - ");
       const nomUsuari = titleParts[0] || "—";
       const accio = titleParts[1] || "—";
-
+      document.getElementById("modalId").value = info.event.id||"";
       document.getElementById("modalUsuari").value = nomUsuari;
       document.getElementById("modalAccio").value = accio;
       document.getElementById("modalData").value = `${dia}/${mes}/${any}`;
@@ -846,7 +968,7 @@ function exportarInformePDF(fitxatges, etiqueta) {
   Object.keys(agrupats).forEach((nom) => {
     const resultat = usuaris.find((u) => u.nom === nom);
     //if (y > 230) {
-    doc.addPage();
+    
     y = afegirCapcalera(doc, empresa);
     //}
 
@@ -931,6 +1053,7 @@ function exportarInformePDF(fitxatges, etiqueta) {
     // Requadre per tota la secció
     doc.rect(10, yStart, 190, y - yStart);
     y += 10;
+    doc.addPage();
   });
   doc.save(`fitxatges_${etiqueta}.pdf`);
 }
