@@ -142,7 +142,7 @@ gap:5px;}
 
 /* Día actual */
 .fc-day-today {
-  background-color: #6abd6e !important;
+  background-color: #6abd6e;
 }
 
 /* Cambiar color de los días de la semana */
