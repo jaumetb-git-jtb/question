@@ -5,7 +5,7 @@
     "rol": "treballador",
     "pin": "1234",
     "cognom":"Mena Lopez",
-    "foto": "IMG-202506027-WA0000.jpg"
+    "foto": "Estela.jpg"
   },
   {
     "id": 2,
@@ -13,7 +13,7 @@
     "rol": "treballador",
     "pin": "2345",
     "cognom":"Tutusaus Perez",
-    "foto": "Jaume.png"
+    "foto": "Jaume.jpg"
   },
   {
     "id": 3,
@@ -21,6 +21,6 @@
     "rol": "treballador",
     "pin": "3456",
     "cognom":"Padró Riba",
-    "foto": "IMG-20250627-WA0001.jpg"
+    "foto":"Paula.jpg"
   }
 ]
