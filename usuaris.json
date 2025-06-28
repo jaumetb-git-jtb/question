@@ -5,7 +5,7 @@
     "cognom":"Mena Lopez",
     "rol": "treballador",
     "pin": "1234",
-    "foto": "./images/Estela.jpg",
+    "foto": "Estela.jpg",
     "empresa_id":1,
     "administrador":false,
     "dni":""
@@ -16,7 +16,7 @@
     "rol": "treballador",
     "cognom":"Tutusaus Perez",
     "pin": "2345",
-    "foto": "./images/Jaume.jpg",
+    "foto": "Jaume.jpg",
     "empresa_id":1,
     "administrador":false,
     "dni":""
@@ -27,7 +27,7 @@
     "cognom":"Padró Riba",
     "rol": "treballador",
     "pin": "3456",
-    "foto":"./images/Paula.jpg",
+    "foto":"Paula.jpg",
     "empresa_id":1,
     "administrador":true,
     "dni":""
